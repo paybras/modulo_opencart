@@ -1,0 +1,494 @@
+
+<modification>
+	<id>módulo de CPF CNPJ Razão Social Inscrição Estadual e Data de nascimento</id>
+	<version>1.0.1</version>
+	<vqmver>2.1.5</vqmver>
+	<author>Jeann e-mail: jeann@surgimento.com.br twiter: @surgimento site: http://www.surgimento.com.br/ </author>			
+	
+	<!-- BLOCO DE REGISTRO NO CHECKOUT COMO VISITANTE E COM CADASTRO-->
+	
+	<file name="catalog/view/theme/*/template/checkout/checkout.tpl">
+
+		<operation> <!-- linha 93 geral - apaga tudo a função $.ajax({ e redimensiona -->
+			<search position="replace" offset="28"><![CDATA[		
+				$('#button-account').live('click', function() {
+			]]></search>
+			<add><![CDATA[
+			$('#button-account').live('click', function() {
+			<?php if ($this->config->get('dados_status')){  ?>
+				location.href="index.php?route=account/register"; 
+			<?php }else{ ?>	
+				$.ajax({
+					url: 'index.php?route=checkout/' + $('input[name=\'account\']:checked').attr('value'),
+					dataType: 'html',
+					beforeSend: function() {
+						$('#button-account').attr('disabled', true);
+						$('#button-account').after('<span class="wait">&nbsp;<img src="catalog/view/theme/default/image/loading.gif" alt="" /></span>');
+					},		
+					complete: function() {
+						$('#button-account').attr('disabled', false);
+						$('.wait').remove();
+					},			
+					success: function(html) {
+						$('.warning, .error').remove();
+						
+						$('#payment-address .checkout-content').html(html);
+							
+						$('#checkout .checkout-content').slideUp('slow');
+							
+						$('#payment-address .checkout-content').slideDown('slow');
+							
+						$('.checkout-heading a').remove();
+							
+						$('#checkout .checkout-heading').append('<a><?php echo $text_modify; ?></a>');
+					},
+					error: function(xhr, ajaxOptions, thrownError) {
+						alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
+					}
+				});
+			<?php } ?>	
+			]]></add>
+		</operation>	
+	</file>
+	
+	
+	<file name="catalog/controller/checkout/payment_address.php">
+		<operation> <!-- linha 172 geral - coloca validação de numero na função validate() -->
+			<search position="before"><![CDATA[
+			if ((utf8_strlen($this->request->post['firstname']) < 1) || (utf8_strlen($this->request->post['firstname']) > 32)) {
+			]]></search>
+			<add><![CDATA[
+				if ($this->config->get('dados_status')){ 
+					
+					if ((utf8_strlen($this->request->post['numero']) < 1) || (utf8_strlen($this->request->post['numero']) > 32)) {
+						$json['error']['numero'] = "O campo numero é obrigatório";
+					}
+					
+				} 
+			]]></add>
+		</operation>
+		
+		<operation><!-- linha 176 geral - retira validação de lastname na função validate() -->
+			<search position="replace" offset="2"><![CDATA[
+				if ((utf8_strlen($this->request->post['lastname']) < 1) || (utf8_strlen($this->request->post['lastname']) > 32)) {
+			]]></search>
+			<add><![CDATA[
+			
+			]]></add>
+		</operation>
+		
+	</file>	
+		
+	<file name="catalog/view/theme/*/template/checkout/payment_address.tpl">
+		<operation error="skip"> <!-- linha topo - autocompletar -->
+			<search position="top" ><![CDATA[
+                
+			]]></search>
+			<add><![CDATA[
+	
+				
+			<script>
+			$(function(){
+				$("input[name='postcode'] ").mask("99999-999");
+				
+				$('input[name="address_1"]').parent().parent().hide();
+				$('input[name="address_2"]').parent().parent().hide();
+				$('input[name="numero"]').parent().parent().hide();
+				$('input[name="complemento"]').parent().parent().hide();
+				$('input[name="city"]').parent().parent().hide();
+				$('select[name="country_id"]').parent().parent().hide();
+				$('select[name="zone_id"]').parent().parent().hide();
+				
+				$('input[name="postcode"]').blur(function(){
+					if ($('input[name="postcode"]').val().length != 0 ) {
+						$('input[name="address_1"]').parent().parent().fadeIn('slow');
+						$('input[name="address_2"]').parent().parent().fadeIn('slow');
+						$('input[name="numero"]').parent().parent().fadeIn('slow');
+						$('input[name="complemento"]').parent().parent().fadeIn('slow');
+						$('input[name="city"]').parent().parent().fadeIn('slow');
+						$('select[name="country_id"]').parent().parent().fadeIn('slow');
+						$('select[name="zone_id"]').parent().parent().fadeIn('slow');
+
+						cep = $.trim($('input[name="postcode"]').val().replace('-', ''));
+						$.getScript("http://cep.republicavirtual.com.br/web_cep.php?formato=javascript&cep="+cep, function(){
+							if(resultadoCEP["resultado"] == "1"){
+								$('input[name="address_1"]').val(unescape(resultadoCEP["tipo_logradouro"])+" "+unescape(resultadoCEP["logradouro"]));
+								$('input[name="address_2"]').val(unescape(resultadoCEP["bairro"]));
+								$('input[name="city"]').val(unescape(resultadoCEP["cidade"]));
+								$('select[name=\'zone_id\']').load('index.php?route=account/cadastro/estado_autocompletar&estado='+unescape(resultadoCEP["uf"]));			
+							}else{
+								alert("Endereço do cep não encontrado. Digite o endereço manualmente!");
+							}
+						});
+					}	
+				});
+			});	
+			</script>
+			]]></add>
+		</operation>
+	
+		<operation error="skip"> <!-- linha 8 geral - adiciona novos campos no checkout na parte de endereços já cadastrados -->
+			<search position="replace" offset="2"><![CDATA[
+                <option value="<?php echo $address['address_id']; ?>" selected="selected"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?>, <?php echo $address['city']; ?>, <?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>
+			]]></search>
+			<add><![CDATA[
+				
+					<option value="<?php echo $address['address_id']; ?>" selected="selected"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?> <?php echo $address['numero']; ?> <?php echo $address['complemento']; ?>, <?php echo $address['city']; ?>,<?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>
+					<?php } else { ?>
+					<option value="<?php echo $address['address_id']; ?>"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?> <?php echo $address['numero']; ?> <?php echo $address['complemento']; ?>, <?php echo $address['city']; ?>,<?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>
+	
+				
+			]]></add>
+		</operation>    
+	
+		<operation error="skip"> <!-- linha 24 geral - apaga campo sobrenome, empresa, company_id, tax_id -->
+			<search position="replace" offset="27"><![CDATA[
+                <td><input type="text" name="firstname" value="" class="large-field" /></td>
+
+			]]></search>
+			<add><![CDATA[
+				<td><input type="text" name="firstname" value="" class="large-field" /></td>
+				</tr>
+				<input type="hidden" name="lastname" value="  sdd" />
+			]]></add>
+		</operation> 
+	
+		<operation>  <!-- linha 57 geral - adiciona novos campos numero e complemento -->
+			<search position="before" offset="1"><![CDATA[
+			<td><?php echo $entry_address_2; ?></td>
+			]]></search>
+			<add><![CDATA[
+			<?php if ($this->config->get('dados_status')){ ?>
+				<tr>
+				  <td><span class="required">*</span> Número:</td>
+				  <td>
+				  <input type="text" name="numero" value="" />
+					
+				  </td>
+				</tr>
+				
+				<tr>
+				  <td>Complemento: </td>
+				  <td>
+				  <input type="text" name="complemento" value="" />
+				  </td>
+				</tr>   	
+			<?php } ?>
+			]]></add>
+		</operation>
+		
+	</file>
+	
+	
+	<file name="catalog/controller/checkout/shipping_address.php">
+		<operation> <!-- linha 172 geral - coloca validação de numero na função validate() -->
+			<search position="before"><![CDATA[
+			if ((utf8_strlen($this->request->post['firstname']) < 1) || (utf8_strlen($this->request->post['firstname']) > 32)) {
+			]]></search>
+			<add><![CDATA[
+				if ($this->config->get('dados_status')){ 
+					
+					if ((utf8_strlen($this->request->post['numero']) < 1) || (utf8_strlen($this->request->post['numero']) > 32)) {
+						$json['error']['numero'] = "O campo numero é obrigatório";
+					}
+					
+				} 
+			]]></add>
+		</operation>
+		
+		<operation><!-- linha 176 geral - retira validação de lastname na função validate() -->
+			<search position="replace" offset="2"><![CDATA[
+				if ((utf8_strlen($this->request->post['lastname']) < 1) || (utf8_strlen($this->request->post['lastname']) > 32)) {
+			]]></search>
+			<add><![CDATA[
+			
+			]]></add>
+		</operation>
+		
+	</file>	
+		
+	<file name="catalog/view/theme/*/template/checkout/shipping_address.tpl">
+		<operation error="skip"> <!-- linha topo - autocompletar -->
+			<search position="top" ><![CDATA[
+                
+			]]></search>
+			<add><![CDATA[
+	
+				
+			<script>
+			$(function(){
+				$("#entrega").mask("99999-999");
+				
+				$('input[name="address_1"]').parent().parent().hide();
+				$('input[name="address_2"]').parent().parent().hide();
+				$('input[name="numero"]').parent().parent().hide();
+				$('input[name="complemento"]').parent().parent().hide();
+				$('input[name="city"]').parent().parent().hide();
+				$('select[name="country_id"]').parent().parent().hide();
+				$('select[name="zone_id"]').parent().parent().hide();
+				
+				$('#entrega').blur(function(){
+					//if ($('input[name="postcode"]').val().length != 0 ) {
+						$('input[name="address_1"]').parent().parent().fadeIn('slow');
+						$('input[name="address_2"]').parent().parent().fadeIn('slow');
+						$('input[name="numero"]').parent().parent().fadeIn('slow');
+						$('input[name="complemento"]').parent().parent().fadeIn('slow');
+						$('input[name="city"]').parent().parent().fadeIn('slow');
+						$('select[name="country_id"]').parent().parent().fadeIn('slow');
+						$('select[name="zone_id"]').parent().parent().fadeIn('slow');
+						cep = $.trim($('#entrega').val().replace('-', ''));
+						$.getScript("http://cep.republicavirtual.com.br/web_cep.php?formato=javascript&cep="+cep, function(){
+							if(resultadoCEP["resultado"] == "1"){
+								$('input[name="address_1"]').val(unescape(resultadoCEP["tipo_logradouro"])+" "+unescape(resultadoCEP["logradouro"]));
+								$('input[name="address_2"]').val(unescape(resultadoCEP["bairro"]));
+								$('input[name="city"]').val(unescape(resultadoCEP["cidade"]));
+								$('select[name=\'zone_id\']').load('index.php?route=account/cadastro/estado_autocompletar&estado='+unescape(resultadoCEP["uf"]));			
+							}else{
+								alert("Endereço do cep não encontrado. Digite o endereço manualmente!");
+							}
+						});
+					//}	
+				});
+			});	
+			</script>
+			]]></add>
+		</operation>
+	
+		<operation error="skip"> <!-- linha 8 geral - adiciona novos campos no checkout na parte de endereços já cadastrados -->
+			<search position="replace" offset="2"><![CDATA[
+                <option value="<?php echo $address['address_id']; ?>" selected="selected"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?>, <?php echo $address['city']; ?>, <?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>
+			]]></search>
+			<add><![CDATA[
+				
+					<option value="<?php echo $address['address_id']; ?>" selected="selected"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?> <?php echo $address['numero']; ?> <?php echo $address['complemento']; ?>, <?php echo $address['city']; ?>,<?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>
+					<?php } else { ?>
+					<option value="<?php echo $address['address_id']; ?>"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?> <?php echo $address['numero']; ?> <?php echo $address['complemento']; ?>, <?php echo $address['city']; ?>,<?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>
+	
+				
+			]]></add>
+		</operation>    
+	
+		<operation error="skip"> <!-- linha 24 geral - apaga campo sobrenome, empresa,  -->
+			<search position="replace" offset="9"><![CDATA[
+                <td><input type="text" name="firstname" value="" class="large-field" /></td>
+
+			]]></search>
+			<add><![CDATA[
+				<td><input type="text" name="firstname" value="" class="large-field" /></td>
+				</tr>
+				<input type="hidden" name="lastname" value=" " />
+			]]></add>
+		</operation> 
+	
+		<operation>  <!-- linha 57 geral - adiciona novos campos numero e complemento -->
+			<search position="before" offset="1"><![CDATA[
+			<td><?php echo $entry_address_2; ?></td>
+			]]></search>
+			<add><![CDATA[
+			<?php if ($this->config->get('dados_status')){ ?>
+				<tr>
+				  <td><span class="required">*</span> Número:</td>
+				  <td>
+				  <input type="text" name="numero" value="" />
+					
+				  </td>
+				</tr>
+				
+				<tr>
+				  <td>Complemento: </td>
+				  <td>
+				  <input type="text" name="complemento" value="" />
+				  </td>
+				</tr>   	
+			<?php } ?>
+			]]></add>
+		</operation>
+		<operation error="skip"> <!-- linha 48 geral - zera sempre campo cep -->
+			<search position="replace" ><![CDATA[
+                <td><input type="text" name="postcode" value="<?php echo $postcode; ?>" class="large-field" /></td>
+
+			]]></search>
+			<add><![CDATA[
+				<td><input type="text" name="postcode" id="entrega" value="" class="large-field" /></td>
+			]]></add>
+		</operation> 
+		
+	</file>
+	
+	
+	<!-- BLOCO DE GRAVAÇÃO DOS CAMPOS -->
+	<file name="catalog/controller/checkout/confirm.php">
+		
+		<operation> <!-- Linha 124 Geral - pegar valor de DDD se estive logado dentro da função index() -->
+			<search position="before" ><![CDATA[
+			$data['telephone'] = $this->customer->getTelephone();
+			]]></search>
+			<add><![CDATA[
+			if ($this->config->get('dados_status')){ 
+				$data['ddd'] = $this->customer->getDDD();		
+			}		
+			]]></add>
+		</operation>
+
+		<operation> <!-- Linha 129 Geral - Armazenar CPF no pedido -->
+			<search position="after" ><![CDATA[
+			$payment_address = $this->model_account_address->getAddress($this->session->data['payment_address_id']);
+			]]></search>
+			<add><![CDATA[
+				$this->load->model('account/customer');
+				$customer_info = $this->model_account_customer->getCustomer($this->customer->getId());
+				$payment_address['tax_id'] = $customer_info['cpf'];
+			]]></add>
+		</operation>
+
+		<operation><!-- Linha 136 Geral - pegar valor de DDD se estiver como visitante dentro da função index()  -->
+			<search position="before" ><![CDATA[
+			$data['telephone'] = $this->session->data['guest']['telephone'];
+			]]></search>
+			<add><![CDATA[
+			if ($this->config->get('dados_status')){ 
+				$data['ddd'] = $this->session->data['guest']['ddd'];
+			}		
+			]]></add>
+		</operation>
+		
+		<operation><!-- Linha 147 Geral - pegar numero e complemento de cobrança dentro da função index()  -->
+			<search position="after" ><![CDATA[
+			$data['payment_address_1'] = $payment_address['address_1'];
+			]]></search>
+			<add><![CDATA[
+			if ($this->config->get('dados_status')){ 
+				$data['payment_numero'] = $payment_address['numero'];
+				$data['payment_complemento'] = $payment_address['complemento'];			
+			}		
+			]]></add>
+		</operation>
+		<operation> <!-- Linha 181 Geral - pegar numero e complemento de entrega dentro da função index()  -->
+			<search position="after" ><![CDATA[
+			$data['shipping_address_1'] = $shipping_address['address_1'];
+			]]></search>
+			<add><![CDATA[
+			if ($this->config->get('dados_status')){ 
+				$data['shipping_numero'] = $shipping_address['numero'];
+				$data['shipping_complemento'] = $shipping_address['complemento'];				
+			}		
+			]]></add>
+		</operation>
+		<operation><!-- Linha 206 Geral - zerar numero e complemento de entrega dentro da função index()  -->
+			<search position="after" ><![CDATA[
+			$data['shipping_address_1'] = '';
+			]]></search>
+			<add><![CDATA[
+			if ($this->config->get('dados_status')){ 
+				$data['shipping_numero'] = '';
+				$data['shipping_complemento'] = '';				
+			}		
+			]]></add>
+		</operation>
+	</file>	
+	<file name="catalog/model/checkout/order.php">
+		<operation> <!-- Linha 4 geral - na função addOrder() insere DDD, payment_numero, payment_complemento, shiping_numero, shiping_complemento e apaga conteudo lastname, company -->
+			<search position="replace" ><![CDATA[
+			$this->db->query("INSERT INTO `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_company_id = '" . $this->db->escape($data['payment_company_id']) . "', payment_tax_id = '" . $this->db->escape($data['payment_tax_id']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', language_id = '" . (int)$data['language_id'] . "', currency_id = '" . (int)$data['currency_id'] . "', currency_code = '" . $this->db->escape($data['currency_code']) . "', currency_value = '" . (float)$data['currency_value'] . "', ip = '" . $this->db->escape($data['ip']) . "', forwarded_ip = '" .  $this->db->escape($data['forwarded_ip']) . "', user_agent = '" . $this->db->escape($data['user_agent']) . "', accept_language = '" . $this->db->escape($data['accept_language']) . "', date_added = NOW(), date_modified = NOW()");
+			]]></search>
+			<add><![CDATA[
+			if ($this->config->get('dados_status')){ 
+				$this->db->query("INSERT INTO `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '', email = '" . $this->db->escape($data['email']) . "', ddd = '" . $this->db->escape($data['ddd']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '', payment_company = '', payment_company_id = '', payment_tax_id = '" . $this->db->escape($data['payment_tax_id']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_numero = '" . $this->db->escape($data['payment_numero']) . "', payment_complemento = '" . $this->db->escape($data['payment_complemento']) . "',payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '', shipping_company = '', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_numero = '" . $this->db->escape($data['shipping_numero']) . "', shipping_complemento = '" . $this->db->escape($data['shipping_complemento']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', language_id = '" . (int)$data['language_id'] . "', currency_id = '" . (int)$data['currency_id'] . "', currency_code = '" . $this->db->escape($data['currency_code']) . "', currency_value = '" . (float)$data['currency_value'] . "', ip = '" . $this->db->escape($data['ip']) . "', forwarded_ip = '" .  $this->db->escape($data['forwarded_ip']) . "', user_agent = '" . $this->db->escape($data['user_agent']) . "', accept_language = '" . $this->db->escape($data['accept_language']) . "', date_added = NOW(), date_modified = NOW()");
+
+			}else{
+				$this->db->query("INSERT INTO `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_company_id = '" . $this->db->escape($data['payment_company_id']) . "', payment_tax_id = '" . $this->db->escape($data['payment_tax_id']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', language_id = '" . (int)$data['language_id'] . "', currency_id = '" . (int)$data['currency_id'] . "', currency_code = '" . $this->db->escape($data['currency_code']) . "', currency_value = '" . (float)$data['currency_value'] . "', ip = '" . $this->db->escape($data['ip']) . "', forwarded_ip = '" .  $this->db->escape($data['forwarded_ip']) . "', user_agent = '" . $this->db->escape($data['user_agent']) . "', accept_language = '" . $this->db->escape($data['accept_language']) . "', date_added = NOW(), date_modified = NOW()");
+			}			
+			]]></add>
+		</operation>
+		
+		<operation> <!-- Linha 97 geral - pega DDD do banco na função getOrder -->
+			<search position="before" ><![CDATA[
+			'telephone'               => $order_query->row['telephone'],
+			]]></search>
+			<add><![CDATA[
+			'ddd'               => $order_query->row['ddd'],
+			]]></add>
+		</operation>
+		
+		<operation> <!-- Linha 103 geral - pega numero e complemento de cobrança na função getOrder() -->
+			<search position="after" ><![CDATA[
+			'payment_address_1'       => $order_query->row['payment_address_1'],
+			]]></search>
+			<add><![CDATA[
+			'payment_numero'      => $order_query->row['payment_numero'],
+			'payment_complemento'      => $order_query->row['payment_complemento'],
+			'payment_url'      => $order_query->row['payment_url'],
+				
+			]]></add>
+		</operation>
+		<operation> <!-- Linha 120 geral - pega numero e complemento de entrega na função getOrder() -->
+			<search position="after" ><![CDATA[
+			'shipping_address_1'      => $order_query->row['shipping_address_1'],
+			]]></search>
+			<add><![CDATA[
+			'shipping_numero'      => $order_query->row['shipping_numero'],
+			'shipping_complemento'      => $order_query->row['shipping_complemento'],			
+			]]></add>
+		</operation>
+	
+		
+		<operation> <!-- Linha 301 geral - pega DDD da na função confirm() -->
+			<search position="after" ><![CDATA[
+			$template->data['email'] = $order_info['email'];
+			]]></search>
+			<add><![CDATA[
+			$template->data['ddd'] = $order_info['ddd'];	
+			]]></add>
+		</operation>
+		
+		<operation>  <!-- Linha 314 e 348 geral - pega dados para mandar por email na função confirm() -->
+			<search position="replace" ><![CDATA[
+			$format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+			]]></search>
+			<add><![CDATA[
+			$format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1} {numero} {complemento}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+			]]></add>
+		</operation>
+		<operation>  <!-- Linha 321 e 355 geral - pega dados para mandar por email na função confirm() -->
+			<search position="after" ><![CDATA[
+			'{address_1}',
+			]]></search>
+			<add><![CDATA[
+			'{numero}',
+			'{complemento}',	
+			]]></add>
+		</operation>
+		
+		<operation>  <!-- Linha 334 geral - pega dados para mandar por email na função confirm() -->
+			<search position="after" ><![CDATA[
+			'address_1' => $order_info['payment_address_1'],
+			]]></search>
+			<add><![CDATA[
+			'numero' => $order_info['payment_numero'],	
+			'complemento' => $order_info['payment_complemento'],
+			]]></add>
+		</operation>
+		
+		<operation>  <!-- Linha 368 geral - pega dados para mandar por email na função confirm() -->
+			<search position="after" ><![CDATA[
+			'address_1' => $order_info['shipping_address_1'],
+			]]></search>
+			<add><![CDATA[
+			'numero' => $order_info['shipping_numero'],	
+			'complemento' => $order_info['shipping_complemento'],
+			]]></add>
+		</operation>
+			
+	</file>	
+	
+	<file name="catalog/view/theme/*/template/mail/order.tpl">
+		<operation error="skip"> <!-- Linha 33 geral - Coloca DDD no e-mail de confirmação de compra  -->
+		<search position="replace" ><![CDATA[
+                <b><?php echo $text_telephone; ?></b> <?php echo $telephone; ?><br />
+			]]></search>
+			<add><![CDATA[
+				<b><?php echo $text_telephone; ?></b> <?php echo $ddd; ?> <?php echo $telephone; ?><br />
+			]]></add>
+		</operation>
+	</file>
+</modification>

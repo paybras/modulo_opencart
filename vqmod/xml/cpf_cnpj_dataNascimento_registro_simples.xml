@@ -1,0 +1,19 @@
+
+<modification>
+	<id>módulo de CPF CNPJ Razão Social Inscrição Estadual e Data de nascimento - Registro simples</id>
+	<version>1.0.1</version>
+	<vqmver>2.1.5</vqmver>
+	<author>Jeann e-mail: jeann@surgimento.com.br twiter: @surgimento site: http://www.surgimento.com.br/ </author>			
+	
+	<!-- BLOCO DE REGISTRO SIMPLES SEM LOGAR E SEM FECHAR PEDIDO -->
+	<file name="catalog/controller/account/register.php">
+		<operation error="skip">  <!-- linha 3 geral - direciona para a nova pagina de cadastro -->
+			<search position="after" ><![CDATA[
+                public function index() {
+			]]></search>
+			<add><![CDATA[
+			$this->redirect($this->url->link('account/cadastro')); 
+			]]></add>
+		</operation>   
+	</file>
+</modification>
