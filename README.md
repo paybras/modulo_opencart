@@ -21,10 +21,11 @@ Instalação
 * Descompactar os arquivos referentes a este módulo e inserir os arquivos dentro da pasta raiz do seu opencart;
 * Executar o update da base de dados através da url http://<seu-site>/paybras_db_install.php
 * Configuração dos módulos paybras:
-** Entrar na interface administrativa do seu opencart;
-** Acessar o Menu extensões -> formas de pagamento;
-** Acessar cada um dos módulos referentes ao Paybras (Paybras - Boleto Bancário, Paybras - Cartão de Crédito e Paybras - TEF);
-** Inserir os dados requeridos para cada um dos módulos
+
+ ** Entrar na interface administrativa do seu opencart;
+ ** Acessar o Menu extensões -> formas de pagamento;
+ ** Acessar cada um dos módulos referentes ao Paybras (Paybras - Boleto Bancário, Paybras - Cartão de Crédito e Paybras - TEF);
+ ** Inserir os dados requeridos para cada um dos módulos
 
 Customização
 ------------
