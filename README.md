@@ -1,4 +1,4 @@
-modulo_opencart
+Módulo Opencart
 ===============
 
 Instruções
@@ -9,10 +9,10 @@ Instruções
 Requerimentos
 -------------
 
-Opencart versão 1.5.6 e 1.5.5 (não foram realizados testes em outras versões);
-PHP 5.2.0 ou superior
-VQMod 2.4.1 Opencart
-Tradução do Opencart para o Português
+* Opencart versão 1.5.6 e 1.5.5 (não foram realizados testes em outras versões);
+* PHP 5.2.0 ou superior
+* VQMod 2.4.1 Opencart
+* Tradução do Opencart para o Português
 
 Instalação
 ----------
