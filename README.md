@@ -20,9 +20,14 @@ Instalação
 * Instalação do VQMOD (http://code.google.com/p/vqmod/wiki/Install_OpenCart);
 * Descompactar os arquivos referentes a este módulo e inserir os arquivos dentro da pasta raiz do seu opencart;
 * Executar o update da base de dados através da url http://seu-site.com.br/paybras_db_install.php
-* Configuração dos módulos paybras:
-  * Entrar na interface administrativa do seu opencart;
-  * Acessar o Menu extensões -> formas de pagamento;
+* Configuração dos campos extras de perfil (CPF, CNPJ, Data de nascimento):
+  * Entrar na interface administrativa do seu OpenCart;
+  * Acessar o Menu Extensões -> Módulos;
+  * Ativar o módulo "Dados Clientes";
+  * Editar as configurações do módulo conforme necessário.
+* Configuração dos módulos Paybras:
+  * Entrar na interface administrativa do seu OpenCart;
+  * Acessar o Menu Extensões -> Formas de Pagamento;
   * Acessar cada um dos módulos referentes ao Paybras (Paybras - Boleto Bancário, Paybras - Cartão de Crédito e Paybras - TEF);
   * Inserir os dados requeridos para cada um dos módulos
 
