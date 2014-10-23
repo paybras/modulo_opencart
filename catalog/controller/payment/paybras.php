@@ -508,7 +508,7 @@ class Paybras {
     public function montaDadosEnvio(){
         //URL
         if ($this->ambiente == 'live') {
-            $url = 'https://paybras.com/payment/api/criaTransacao';
+            $url = 'https://service.paybras.com/payment/api/criaTransacao';
         } elseif ($this->ambiente == 'sandbox') {
             $url = 'https://sandbox.paybras.com/payment/api/criaTransacao';     
         } elseif ($this->ambiente == 'local') {

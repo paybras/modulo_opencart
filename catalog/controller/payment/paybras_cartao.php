@@ -7,7 +7,7 @@ class ControllerPaymentPaybrasCartao extends Controller {
 
 		//pega serviço para calculo de parcelas
 		if ($this->config->get('paybras_cartao_ambience') == 'live') {
-    		$url = 'https://paybras.com/payment/getParcelas';
+    		$url = 'https://service.paybras.com/payment/getParcelas';
 		} elseif ($this->config->get('paybras_cartao_ambience') == 'sandbox') {
 			$url = 'https://sandbox.paybras.com/payment/getParcelas';		
 		} elseif ($this->config->get('paybras_cartao_ambience') == 'local') {
