@@ -108,35 +108,26 @@ $notificacao=$this->config->get('config_url').'paybras/retorno.php';
 if($this->config->get('config_secure'))
 	$notificacao = str_replace("http", "https", $notificacao);
 
-
-if(!$pedido->row['shipping_address_1']) $pedido->row['shipping_address_1']=$_POST['fatura_endereco'];
-if(!$pedido->row['shipping_address_2']) $pedido->row['shipping_address_2']=$_POST['fatura_bairro'];
-if(!$pedido->row['shipping_city']) $pedido->row['shipping_city']=$_POST['fatura_cidade'];
-if(!$pedido->row['shipping_postcode']) $pedido->row['shipping_postcode']=$_POST['fatura_cep'];
-if(!$estado->row['code']) $estado->row['code']=$_POST['fatura_estado'];
-
-
-$dados['recebedor_api_token'] = $this->config->get('paybrasc_token');
+	$dados['recebedor_api_token'] = $this->config->get('paybrasc_token');
 	$dados['recebedor_email'] = $this->config->get('paybrasc_email_conta');
 	$dados['pedido_id'] = $order_id;
-	$dados['pedido_descricao'] = 'Pedido '.$order_id.' efetuado em teste';
+	$dados['pedido_descricao'] = 'Pedido '.$pedido->row['order_id'].' efetuado em '.$this->config->get('config_url');
 	$dados['pedido_meio_pagamento'] = 'cartao';
 	$dados['pedido_moeda'] = 'BRL';
 	$dados['pedido_valor_total_original'] = $pedido->row['total'];
-	$dados['pagador_nome'] = $this->converte_utf($pedido->row['firstname']).' '.$this->converte_utf($pedido->row['lastname']);
+	$dados['pagador_nome'] = utf8_encode($_POST['fatura_nome']);
 	$dados['pagador_email'] = $pedido->row['email'];
 	$dados['pagador_cpf'] = preg_replace("/[^0-9]/","",$request->post['cartao_cpf']);
 	$dados['pagador_rg'] = '';
 	$dados['pagador_telefone_ddd'] = $_POST['cartao_telefone_ddd'];
 	$dados['pagador_telefone'] = $_POST['cartao_telefone'];
 	$dados['pagador_ip'] = $this->get_ip();
-	$dados['pagador_logradouro'] = ($this->converte_utf($pedido->row['shipping_address_1']));
-	$dados['pagador_numero'] = 'x';
-	$dados['pagador_complemento'] =($this->converte_utf($pedido->row['shipping_address_2']));
-	$dados['pagador_bairro'] =($this->converte_utf($pedido->row['shipping_address_2']));
-	$dados['pagador_cep'] =  str_replace(array('.', '-'), '', $pedido->row['shipping_postcode']);
-	$dados['pagador_cidade'] =  $this->converte_utf($pedido->row['shipping_city']);
-	$dados['pagador_estado'] = $this->converte_utf($estado->row['code']);
+	$dados['pagador_logradouro'] = utf8_encode($_POST['fatura_endereco']);
+	$dados['pagador_numero'] = utf8_encode($_POST['fatura_numero']);
+	$dados['pagador_bairro'] = utf8_encode($_POST['fatura_bairro']);
+	$dados['pagador_cep'] =  utf8_encode($_POST['fatura_cep']);
+	$dados['pagador_cidade'] =  utf8_encode($_POST['fatura_cidade']) ;
+	$dados['pagador_estado'] =  utf8_encode($_POST['fatura_estado']);
 	
 	$dados['pagador_pais'] = 'BRA';
 	$dados['entrega_nome'] = utf8_encode($_POST['fatura_nome']);
@@ -144,7 +135,6 @@ $dados['recebedor_api_token'] = $this->config->get('paybrasc_token');
 	$dados['entrega_pais'] = 'BRA';
 	$dados['entrega_logradouro'] = utf8_encode($_POST['fatura_endereco']);
 	$dados['entrega_numero'] = utf8_encode($_POST['fatura_numero']);
-	$dados['entrega_complemento'] = utf8_encode($_POST['fatura_bairro']);
 	$dados['entrega_bairro'] = utf8_encode($_POST['fatura_bairro']);
 	$dados['entrega_cep'] = utf8_encode($_POST['fatura_cep']);
 	$dados['entrega_cidade'] = utf8_encode($_POST['fatura_cidade']) ;
@@ -175,11 +165,8 @@ $dados['recebedor_api_token'] = $this->config->get('paybrasc_token');
 	}
 	$data_string=json_encode($dados);
 	
-	if($this->config->get('paybrasb_modo')==2)
 		$url='https://service.paybras.com/payment/api/criaTransacao';
-	else
-		$url='https://sandbox.paybras.com/payment/api/criaTransacao';
-	
+
 	$ch = curl_init();
 
         
@@ -194,12 +181,10 @@ $dados['recebedor_api_token'] = $this->config->get('paybrasc_token');
         );
 		
 	$resultado=(json_decode((curl_exec($ch))));
-
 	$status = $resultado->status_codigo;    
     $transacao = $resultado->transacao_id; 
 	#descomente para depurar	
 	#file_put_contents('XML-paybras.txt', print_r($resultado, true) .'   '.$xml);
-    
 	$output = '';
 	
 	 if($status == 1 or $status==2)
@@ -240,7 +225,7 @@ $dados['recebedor_api_token'] = $this->config->get('paybrasc_token');
 	
 		
 			#Atualiza o status da transacao na tabela dos pedidos	
-            $this->db->query("UPDATE ".DB_PREFIX."order SET id_transacao_paybras ='" .$transacao . "' WHERE order_id=".$pedido->row['order_id']);
+            $this->db->query("UPDATE `".DB_PREFIX."order` SET `id_transacao_paybras` ='" .$transacao . "' WHERE `order_id`=".$pedido->row['order_id']);
 
 		
 		if (!empty($this->session->data['order_id'])) 

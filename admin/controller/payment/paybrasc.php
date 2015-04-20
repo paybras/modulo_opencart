@@ -124,6 +124,15 @@ class ControllerPaymentPaybrasC extends Controller
 			$this->data['paybrasc_logo'] = isset($current_settings['paybrasc_logo']) ? $current_settings['paybrasc_logo'] : ''; 
 		} 
 		
+		if (isset($this->request->post['paybrasc_company'])) 
+		{
+			$this->data['paybrasc_company'] = $this->request->post['paybrasc_company'];
+		} 
+		else 
+		{
+			$this->data['paybrasc_company'] = isset($current_settings['paybrasc_company']) ? $current_settings['paybrasc_company'] : ''; 
+		} 
+		
 		if (isset($this->request->post['paybrasc_template'])) 
 		{
 			$this->data['paybrasc_template'] = $this->request->post['paybrasc_template'];

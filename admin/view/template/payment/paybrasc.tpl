@@ -97,6 +97,14 @@
 
       </tr>
 	        <tr>
+	          <td colspan="2"><h2>Checkout</h2></td>
+        </tr>
+	        <tr>
+	          <td colspan="2">Usar campo &quot;Empresa&quot; (companny) como campo nº do endereço? <label for="paybrasc_company"><input name="paybrasc_company" type="radio" id="radio" value="1" <?php if ($paybrasc_company == 1) echo 'checked'; ?>>Sim </label>
+              <label for="paybrasc_company"><input type="radio" <?php if ($paybrasc_company != 1) echo 'checked'; ?> name="paybrasc_company" id="radio2" value="0"> Não    </label>           
+        </td>
+        </tr>
+	        <tr>
 	          <td colspan="2"><h2>Status dos Pedidos</h2></td>
         </tr>
 	        <tr>

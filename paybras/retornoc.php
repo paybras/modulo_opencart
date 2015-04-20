@@ -16,7 +16,7 @@ $db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
 function get_config($config)
 {
 	global $db;
-	$config = $db->query("SELECT value FROM " . DB_PREFIX . "setting s where s.key='".$config."'");
+	$config = $db->query("SELECT `value` FROM `" . DB_PREFIX . "setting`  where `key`='".$config."'");
     return $config->row['value'];
 }
 
@@ -34,12 +34,12 @@ if(get_config('paybrasc_token')==$retorno->recebedor_api_token)
     
     $orderModel = $registry->get('model_checkout_order');
 
-	    $res	= $db->query("SELECT order_id FROM ".DB_PREFIX."order WHERE id_transacao_paybras='".$retorno->transacao_id."' LIMIT 1");
+	    $res	= $db->query("SELECT `order_id` FROM `".DB_PREFIX."order` WHERE `id_transacao_paybras`='".$retorno->transacao_id."' LIMIT 1");
 		
 		
 		$id_transacao=$res->row['order_id'];
 
-		switch($status_pagamento)
+		switch($retorno->status_codigo)
 		{
 			case 1:
 			case 2:
@@ -73,7 +73,7 @@ if(get_config('paybrasc_token')==$retorno->recebedor_api_token)
 		
 		 if ($novoStatus) 
 		 {
-			$resultado = $orderModel->update($id_transacao, $novoStatus, $notify = true);
+			$resultado = $orderModel->update($id_transacao, $novoStatus,  true);
 			
 		$ret['retorno'] = 'ok';
 		echo json_encode($ret);	

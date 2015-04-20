@@ -1,14 +1,6 @@
 <?php
 
-function parcelar($valorTotal, $taxa, $nParcelas)
-	{
-		$taxa = $taxa/100;
-		$cadaParcela = ($valorTotal*$taxa)/(1-(1/pow(1+$taxa, $nParcelas)));
-		return round($cadaParcela, 2);
-	}
-
-
-    #Seleciona dados do pedido
+        #Seleciona dados do pedido
 
         $registry = new Registry();
 		
@@ -28,6 +20,37 @@ function parcelar($valorTotal, $taxa, $nParcelas)
         
         $valor=number_format($pedido->row['total'], 2, '.', '');
         
+        #Seleciona dados do parcelamento paybras de acordo com as tarifas do cliente
+        $dados['recebedor_api_token']=$this->config->get('paybrasc_token');
+        $dados['pedido_valor_total']=$valor;
+        $dados['recebedor_email']=$this->config->get('paybrasc_email_conta');
+
+        
+        $data_string=json_encode($dados);
+	
+        $url='https://service.paybras.com/payment/getParcelas';
+
+        $ch = curl_init();
+
+        
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($data_string))
+        );
+		
+        #Vetor com as parcelas
+        $parc=(json_decode((curl_exec($ch))));
+        
+        
+        #Calcula os anos da validade do cartão
+        
+        
+        
         $anos_validade_cartao="";
 
 		for($i=date("Y"); $i< (date("Y") + 10); $i++)
@@ -35,61 +58,18 @@ function parcelar($valorTotal, $taxa, $nParcelas)
             $anos_validade_cartao .= '<option value="'.($i-2000).'">'.$i.'</option>';
         }        
         
-        $valor=number_format($pedido->row['total'], 2, '.', '');
-		$maximo_parcelas=12;
-		$juros=2.49;
-		$semjuros=1;
+        #$valor=number_format($pedido->row['total'], 2, '.', '');
+
 		
-		
-		if($valor>5) 
-		{
-			$splitss = (int) ($valor/5);
-			
-			if($splitss<=$maximo_parcelas)
-			{
-				$total_parcelas = $splitss;
-			}
-			else
-			{
-				$total_parcelas = $maximo_parcelas;
-			}
-		}
-		else
-		{
-			$total_parcelas = 1;
-		}
 		
 		#calcula o parcelamento de acordo com o valor do pedido. A parcela mínima do Paybrás é de 5 reais
 	
 		$parcelamento='<select name="parcelas" id="parcelas">';
-		
-		
-		for($j=1; $j<=$total_parcelas;$j++) 
+        
+		foreach($parc as $i => $parcela) 
 		{
-		
-			if($semjuros>=$j) 
-			{
-			
-				$parcelas = $valor/$j;
-				$parcelas = number_format($parcelas, 2, '.', '');
-				
-				$parcelamento .= '<option value="'.$j.'">'.$j.'x de R$'.number_format($parcelas, 2,',', '.').' Sem Juros</option>';
-				
-				
-				
-			}
-			else
-			{
-			
-				$parcelas = parcelar($valor, $juros, $j);
-				$parcelas = number_format($parcelas, 2, '.', '');
-				
-				$parcelamento .= '<option value="'.$j.'">'.$j.'x de R$'.number_format($parcelas, 2,',', '.').' Com Juros de '.number_format($juros, 2, ',', ',').'% A.M.</option>
-				
-				';
-				
-				
-			}
+				if(isset($parcela->parcela))
+				$parcelamento .= '<option value="'.$parcela->parcela.'">'.$parcela->parcela.'x de R$'.number_format($parcela->valor_parcela, 2,',', '.').'</option>';
 		
 		}
 		
@@ -179,14 +159,18 @@ function parcelar($valorTotal, $taxa, $nParcelas)
       </p>
       <p>
         <input name="fatura_nome" type="hidden" id="fatura_nome" value="<?php echo $pedido->row['payment_firstname'].' '.$pedido->row['payment_lastname']; ?>">
-        <input name="fatura_numero" type="hidden" id="fatura_numero" value="">
         <input name="fatura_endereco" type="hidden" id="fatura_endereco" value="<?php echo $pedido->row['payment_address_1'] ?>">
         <input name="fatura_bairro" type="hidden" id="fatura_bairro" value="<?php echo $pedido->row['payment_address_2'] ?>">
         <input name="fatura_cidade" type="hidden" id="fatura_cidade" value="<?php echo $pedido->row['payment_city'] ?>">
         <input name="fatura_estado" type="hidden" id="fatura_estado" value="<?php echo $estado->row['code'] ?>">
         <input name="fatura_cep" type="hidden" id="fatura_cep" value="<?php echo $fatura_cep ?>" >
+       <input type="hidden" name="cartao_numero" id="cartao_numero" value="">
+        <?php if($this->config->get('paybrasc_company')==1) { ?>
+        <input name="fatura_numero" type="hidden" id="fatura_numero" value="<?php echo $pedido->row['payment_company'] ?>">
+        <?php } else { ?>
         <input name="fatura_numero" type="hidden" id="fatura_numero" value="">
-        <input type="hidden" name="cartao_numero" id="cartao_numero" value="">
+         <?php }  ?>
+
       </p>
       <p>&nbsp;</p>
     </div>

@@ -412,6 +412,7 @@ function verificarCPF(cpf)
 		
 		document.getElementById('pagador_nome').value=document.getElementById('fatura_nome').value;
 		document.getElementById('pagador_endereco').value=document.getElementById('fatura_endereco').value;
+		
 		document.getElementById('pagador_numero').value=document.getElementById('fatura_numero').value;
 		document.getElementById('pagador_bairro').value=document.getElementById('fatura_bairro').value;
 		document.getElementById('pagador_cep').value=document.getElementById('fatura_cep').value;
